@@ -6,18 +6,19 @@
 # kernel_sigma: the Gaussian kernel bandwidth;
 # targetdim: the dimension of target subspace.
 #-----------------------------------------------------------------------#
-principal_curve_KDE <- function(X, Xinit, kernel_sigma, targetdim){
+principal_curve_KDE <- function(X, Xinit, kernel_sigma, targetdim, adaptive = F, p0 = NaN){
   point <- Xinit 
   N <- nrow(X)
   dim <- ncol(X)
   threshold <- 1e-10 #tolerance
   pc <- matrix(0, nrow = N, ncol = dim) 
+  
   for (ind in 1:nrow(point)) {
     flag <- 0 
-    pghlist <- pgh(point[ind, ], X, N, dim, kernel_sigma)
+    pghlist <- pgh(point[ind, ], X, N, dim, kernel_sigma, adaptive, p0)
     point_pc1 <- point[ind, ]
     eigenlist <- eigen(pghlist$SI)
-    ConstrainedSpace <- eigenlist$vectors[, 1:(dim-targetdim)]
+    ConstrainedSpace <- eigenlist$vectors[, 1:(dim-targetdim)]#[,dim:(dim-targetdim)]
     ConstrainedSpace <- as.matrix(ConstrainedSpace)
     gra <- pghlist$g
     H <- pghlist$H
@@ -29,11 +30,11 @@ principal_curve_KDE <- function(X, Xinit, kernel_sigma, targetdim){
     }
     if(!flag){
       for (a in 1:20) {
-        G <- kernel_vec(point_pc1, X, N, dim, kernel_sigma)
+        G <- kernel_vec(point_pc1, X, N, dim, kernel_sigma, p0)
         num1 <- rowSums(matrix(rep(G, dim), nrow = dim, byrow = T)*t(X))
         den1 <- sum(G)
         #######################################################################
-        pghlist <- pgh(point_pc1, X, N, dim, kernel_sigma)
+        pghlist <- pgh(point_pc1, X, N, dim, kernel_sigma, adaptive, p0)
         eigenlist <- eigen(pghlist$SI)
         ConstrainedSpace <- eigenlist$vectors[, 1:(dim-targetdim)]
         ConstrainedSpace <- as.matrix(ConstrainedSpace)
